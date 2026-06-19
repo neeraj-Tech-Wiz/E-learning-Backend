@@ -47,6 +47,7 @@ public class SecurityConfig {
 
                     .authorizeHttpRequests(auth -> auth
 
+                            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                             /* =====================================================
                                FRONTEND (React SPA) ROUTES – MUST BE PERMITTED
                                ===================================================== */

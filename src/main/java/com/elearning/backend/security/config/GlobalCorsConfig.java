@@ -19,12 +19,8 @@ public class GlobalCorsConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://127.0.0.1:5500",
                 "http://localhost:*",
-                "http://localhost:5173",
-                "http://localhost:3000",
                 "https://*.ngrok-free.dev",
-                "https://unquerulous-chae-uncharitably.ngrok-free.dev",
-                "https://e-learning-frontend-orcin.vercel.app"
-
+                "https://*.vercel.app"
         ));
 
         config.setAllowedHeaders(List.of("*"));
