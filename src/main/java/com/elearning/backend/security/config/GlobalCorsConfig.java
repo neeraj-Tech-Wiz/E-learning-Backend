@@ -22,7 +22,9 @@ public class GlobalCorsConfig {
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "https://*.ngrok-free.dev",
-                "https://unquerulous-chae-uncharitably.ngrok-free.dev"
+                "https://unquerulous-chae-uncharitably.ngrok-free.dev",
+                "https://e-learning-frontend-orcin.vercel.app"
+
         ));
 
         config.setAllowedHeaders(List.of("*"));
