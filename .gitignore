@@ -1,0 +1,45 @@
+HELP.md
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Uploads
+uploads/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+src/main/resources/static/assets/
+src/main/resources/static/index.html
+src/main/resources/static/vite.svg
