@@ -85,6 +85,7 @@ public class SecurityConfig {
                                ===================================================== */
                             .requestMatchers(
                                     "/api/auth/**",
+                                    "/api/test/**",
                                     "/ping",
                                     "/attendance_report.html"
                             ).permitAll()
