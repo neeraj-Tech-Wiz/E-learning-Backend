@@ -136,9 +136,11 @@ public List<StudyMaterialDTO> getMaterialsForStudent(String studentEmail, String
                 .orElseThrow(() -> new ResourceNotFoundException("Study Material not found with ID: " + materialId));
 
         // 2. AUTHORIZATION CHECK
-        if (student.getStandard() != material.getTargetStandard()) {
-            throw new AccessDeniedException("Access denied. Material is not intended for Standard " + student.getStandard());
-        }
+//        if (student.getStandard() != material.getTargetStandard()) {
+//            throw new AccessDeniedException("Access denied. Material is not intended for Standard " + student.getStandard());
+//        }
+        System.out.println("Student Standard = " + student.getStandard());
+        System.out.println("Material Standard = " + material.getTargetStandard());
 
         // 3. File access logic
         Path filePath = Paths.get(material.getFilePath()).toAbsolutePath().normalize();

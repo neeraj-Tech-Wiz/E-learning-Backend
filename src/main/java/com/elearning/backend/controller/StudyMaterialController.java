@@ -63,6 +63,7 @@ public ResponseEntity<Resource> secureDownloadMaterial(
         @PathVariable Long materialId
 ) throws AccessDeniedException {
     String studentEmail = principal.getName();
+    System.out.println("DOWNLOAD CONTROLLER HIT");
 
     // Get the actual resource from service
     Resource resource = studyMaterialService.downloadMaterialSecurely(studentEmail, materialId);
