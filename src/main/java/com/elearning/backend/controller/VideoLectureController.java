@@ -5,8 +5,7 @@ import com.elearning.backend.model.VideoLecture;
 import com.elearning.backend.service.VideoLectureService;
 import com.elearning.backend.service.VideoLectureMapper; // New Mapper Import
 import lombok.RequiredArgsConstructor; // For clean constructor injection
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.util.List;
@@ -54,24 +54,24 @@ public class VideoLectureController {
 
     // 2. DOWNLOAD ENDPOINT (No change needed, as it returns a Resource)
     @GetMapping("/download/{lectureId}")
-    public ResponseEntity<Resource> downloadLecture(@PathVariable Long lectureId) {
-        Resource resource = videoLectureService.downloadVideo(lectureId);
+    public ResponseEntity<Void> downloadLecture(
+            @PathVariable Long lectureId) {
 
-        String mimeType = "video/mp4";
+        String url = videoLectureService.downloadVideo(lectureId);
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(mimeType))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url))
+                .build();
     }
     @GetMapping("/stream/{lectureId}")
-    public ResponseEntity<Resource> streamLecture(@PathVariable Long lectureId) {
-        Resource resource = videoLectureService.downloadVideo(lectureId);
+    public ResponseEntity<Void> streamLecture(
+            @PathVariable Long lectureId) {
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("video/mp4"))
-                .body(resource);
+        String url = videoLectureService.downloadVideo(lectureId);
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url))
+                .build();
     }
 
     // 3. GET BY TEACHER ENDPOINT (Updated to return DTOs)
@@ -102,31 +102,34 @@ public class VideoLectureController {
         return ResponseEntity.ok(dtos);
     }
     @GetMapping("/secure/download/{lectureId}")
-    public ResponseEntity<Resource> secureDownloadLecture(
-            Principal principal, // <-- Get JWT subject (email) directly
+    public ResponseEntity<Void> secureDownloadLecture(
+            Principal principal,
             @PathVariable Long lectureId
     ) throws AccessDeniedException {
-        // Calls the service method with the authorization check
-        Resource resource = videoLectureService.downloadVideoSecurely(principal.getName(), lectureId);
 
-        // Forces download (Secure)
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+        String url = videoLectureService.downloadVideoSecurely(
+                principal.getName(),
+                lectureId
+        );
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url))
+                .build();
     }
 
     @GetMapping("/secure/stream/{lectureId}")
-    public ResponseEntity<Resource> secureStreamLecture(
-            Principal principal, // <-- Get JWT subject (email) directly
+    public ResponseEntity<Void> secureStreamLecture(
+            Principal principal,
             @PathVariable Long lectureId
     ) throws AccessDeniedException {
-        // We pass the email (principal.getName()) to the service layer for lookup
-        Resource resource = videoLectureService.downloadVideoSecurely(principal.getName(), lectureId);
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("video/mp4"))
-                .body(resource);
+        String url = videoLectureService.downloadVideoSecurely(
+                principal.getName(),
+                lectureId
+        );
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url))
+                .build();
     }
 }

@@ -4,8 +4,7 @@ import com.elearning.backend.dto.StudyMaterialDTO;
 import com.elearning.backend.model.StudyMaterial;
 import com.elearning.backend.service.StudyMaterialMapper;
 import com.elearning.backend.service.StudyMaterialService;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URI;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
 import java.security.Principal;
 import java.util.List;
 
@@ -58,35 +56,21 @@ public class StudyMaterialController {
                 .status(HttpStatus.CREATED) // Sets the HTTP Status Code to 201
                 .body(dto);    }
 
-@GetMapping("/secure/download/{materialId}")
-public ResponseEntity<Resource> secureDownloadMaterial(
-        Principal principal,
-        @PathVariable Long materialId
-) throws AccessDeniedException, MalformedURLException {
-    String studentEmail = principal.getName();
-    System.out.println("DOWNLOAD CONTROLLER HIT");
+    @GetMapping("/secure/download/{materialId}")
+    public ResponseEntity<Void> secureDownloadMaterial(
+            Principal principal,
+            @PathVariable Long materialId
+    ) throws AccessDeniedException {
 
-    // Get the actual resource from service
-    Resource resource = studyMaterialService.downloadMaterialSecurely(studentEmail, materialId);
+        String url = studyMaterialService.downloadMaterialSecurely(
+                principal.getName(),
+                materialId
+        );
 
-    // Try to detect MIME type automatically (fallback to PDF)
-    MediaType contentType = MediaType.APPLICATION_PDF;
-    try {
-        String detectedType = Files.probeContentType(resource.getFile().toPath());
-        if (detectedType != null) {
-            contentType = MediaType.parseMediaType(detectedType);
-        }
-    } catch (IOException ex) {
-        // Default to PDF if detection fails
-        contentType = MediaType.APPLICATION_PDF;
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url))
+                .build();
     }
-
-    return ResponseEntity.ok()
-            .contentType(contentType)
-            .header(HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + resource.getFilename() + "\"")
-            .body(resource);
-}
 
     @GetMapping("/student/content") // <-- FIX 1: SIMPLIFIED URL PATH
     public ResponseEntity<List<StudyMaterialDTO>> getStudentMaterials(
@@ -103,16 +87,15 @@ public ResponseEntity<Resource> secureDownloadMaterial(
 
     // 2. DOWNLOAD ENDPOINT
     @GetMapping("/download/{materialId}")
-    public ResponseEntity<Resource> downloadLecture(@PathVariable Long materialId) {
+    public ResponseEntity<Void> downloadLecture(
+            @PathVariable Long materialId
+    ) {
 
-        Resource resource = studyMaterialService.downloadMaterialUnsecured(materialId);
+        String url = studyMaterialService.downloadMaterialUnsecured(materialId);
 
-        // Return headers to force download (attachment)
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(url))
+                .build();
     }
 
     // 3. GET BY TEACHER ENDPOINT

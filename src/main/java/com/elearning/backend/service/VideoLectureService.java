@@ -1,5 +1,6 @@
 package com.elearning.backend.service;
 
+import com.elearning.backend.dto.CloudinaryUploadResult;
 import com.elearning.backend.dto.VideoLectureDTO;
 import com.elearning.backend.exception.ResourceNotFoundException;
 import com.elearning.backend.model.Student;
@@ -11,20 +12,15 @@ import com.elearning.backend.repository.StudentRepository;
 import com.elearning.backend.repository.TeacherRepository;
 import com.elearning.backend.repository.VideoLectureRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.AccessDeniedException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,27 +34,34 @@ public class VideoLectureService {
     private final VideoLectureMapper videoLectureMapper;
     private final StudentRepository studentRepository;
     private final StudentProgressRepository studentProgressRepository;
+    private final CloudinaryService cloudinaryService;
 
-    public VideoLecture uploadVideo(String teacherEmail, String title, String duration, MultipartFile file,
-                                    int targetStandard, String subject) throws IOException {
+    public VideoLecture uploadVideo(
+            String teacherEmail,
+            String title,
+            String duration,
+            MultipartFile file,
+            int targetStandard,
+            String subject
+    ) throws IOException {
 
         Teacher teacher = teacherRepository.findByEmail(teacherEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher not found with Email: " + teacherEmail));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Teacher not found with Email: " + teacherEmail
+                        ));
 
-        if (!Files.exists(rootDir)) {
-            Files.createDirectories(rootDir);
-        }
-
-        String originalFilename = file.getOriginalFilename();
-        String uniqueFilename = UUID.randomUUID().toString() + "_" + originalFilename;
-        Path targetLocation = this.rootDir.resolve(uniqueFilename);
-
-        Files.copy(file.getInputStream(), targetLocation);
+        CloudinaryUploadResult uploadResult =
+                cloudinaryService.uploadVideo(file);
 
         VideoLecture lecture = new VideoLecture();
+
         lecture.setTitle(title);
         lecture.setDuration(duration);
-        lecture.setFilePath(targetLocation.toString());
+
+        // Store Cloudinary URL
+        lecture.setFilePath(uploadResult.getUrl());
+
         lecture.setTeacher(teacher);
         lecture.setTargetStandard(targetStandard);
         lecture.setSubject(subject);
@@ -102,54 +105,35 @@ public List<VideoLectureDTO> getVideosForStudent(String studentEmail, String sea
 
 
 
-    public Resource downloadVideo(Long lectureId) {
+    public String downloadVideo(Long lectureId) {
 
         VideoLecture lecture = videoLectureRepository.findById(lectureId)
-                .orElseThrow(() -> new ResourceNotFoundException("Video Lecture not found with ID: " + lectureId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Video Lecture not found with ID: " + lectureId));
 
-        Path filePath = Paths.get(lecture.getFilePath()).toAbsolutePath().normalize();
-
-        try {
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                return resource;
-            } else {
-                throw new ResourceNotFoundException("File not found on server for lecture ID: " + lectureId);
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error reading file path: " + lecture.getFilePath(), e);
-        }
+        return lecture.getFilePath();
     }
-    public Resource downloadVideoSecurely(String studentEmail, Long lectureId) throws AccessDeniedException { // <-- REMOVED studentId parameter
+    public String downloadVideoSecurely(String studentEmail, Long lectureId)
+            throws AccessDeniedException {
 
-        // 1. Fetch Student by Email (Username)
         Student student = studentRepository.findByEmail(studentEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found for email: " + studentEmail));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Student not found for email: " + studentEmail));
 
-        // 2. Fetch Lecture
         VideoLecture lecture = videoLectureRepository.findById(lectureId)
-                .orElseThrow(() -> new ResourceNotFoundException("Video Lecture not found with ID: " + lectureId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Video Lecture not found with ID: " + lectureId));
 
-        // 3. AUTHORIZATION CHECK (Logic remains the same)
         if (student.getStandard() != lecture.getTargetStandard()) {
-            throw new AccessDeniedException("Access denied. Lecture is not intended for Standard " + student.getStandard());
+            throw new AccessDeniedException(
+                    "Access denied. Lecture is not intended for Standard "
+                            + student.getStandard());
         }
 
-        // 3. File access logic (similar to the previous downloadVideo method)
-        Path filePath = Paths.get(lecture.getFilePath()).toAbsolutePath().normalize();
-
-        try {
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                return resource;
-            } else {
-                throw new ResourceNotFoundException("File not found on server for lecture ID: " + lectureId);
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error reading file path: " + lecture.getFilePath(), e);
-        }
+        return lecture.getFilePath();
     }
 
     public List<VideoLecture> getVideosByTeacher(Long teacherId) {
