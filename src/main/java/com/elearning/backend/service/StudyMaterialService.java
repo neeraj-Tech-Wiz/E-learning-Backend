@@ -127,7 +127,7 @@ public List<StudyMaterialDTO> getMaterialsForStudent(String studentEmail, String
     // DOWNLOAD LOGIC (SECURE)
     // =========================================================================
 
-    public Resource downloadMaterialSecurely(String studentEmail, Long materialId) throws AccessDeniedException {
+    public Resource downloadMaterialSecurely(String studentEmail, Long materialId) throws AccessDeniedException, MalformedURLException {
 
         // 1. Fetch Student and Material
         Student student = studentRepository.findByEmail(studentEmail)
@@ -143,18 +143,42 @@ public List<StudyMaterialDTO> getMaterialsForStudent(String studentEmail, String
         System.out.println("Material Standard = " + material.getTargetStandard());
 
         // 3. File access logic
+//        Path filePath = Paths.get(material.getFilePath()).toAbsolutePath().normalize();
+//
+//        try {
+//            Resource resource = new UrlResource(filePath.toUri());
+//
+//            if (resource.exists() && resource.isReadable()) {
+//                return resource;
+//            } else {
+//                throw new ResourceNotFoundException("File not found on server for material ID: " + materialId);
+//            }
+//        } catch (MalformedURLException e) {
+//            throw new RuntimeException("Error reading file path: " + material.getFilePath(), e);
+//        }
+        // 3. File access logic
         Path filePath = Paths.get(material.getFilePath()).toAbsolutePath().normalize();
+
+        System.out.println("========== FILE DEBUG ==========");
+        System.out.println("Stored Path   : " + material.getFilePath());
+        System.out.println("Resolved Path : " + filePath);
 
         try {
             Resource resource = new UrlResource(filePath.toUri());
 
+            System.out.println("File Exists   : " + resource.exists());
+            System.out.println("File Readable : " + resource.isReadable());
+
             if (resource.exists() && resource.isReadable()) {
+                System.out.println("Returning file...");
                 return resource;
-            } else {
-                throw new ResourceNotFoundException("File not found on server for material ID: " + materialId);
             }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error reading file path: " + material.getFilePath(), e);
+
+            throw new RuntimeException("FILE NOT FOUND");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
         }
     }
     public Resource downloadMaterialUnsecured(Long materialId) {
