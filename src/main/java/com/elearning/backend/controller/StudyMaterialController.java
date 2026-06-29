@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.security.Principal;
@@ -61,7 +62,7 @@ public class StudyMaterialController {
 public ResponseEntity<Resource> secureDownloadMaterial(
         Principal principal,
         @PathVariable Long materialId
-) throws AccessDeniedException {
+) throws AccessDeniedException, MalformedURLException {
     String studentEmail = principal.getName();
     System.out.println("DOWNLOAD CONTROLLER HIT");
 
