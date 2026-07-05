@@ -86,6 +86,7 @@ public class SecurityConfig {
                             .requestMatchers(
                                     "/api/auth/**",
                                     "/api/test/**",
+                                    "/api/health",
                                     "/ping",
                                     "/attendance_report.html"
                             ).permitAll()
