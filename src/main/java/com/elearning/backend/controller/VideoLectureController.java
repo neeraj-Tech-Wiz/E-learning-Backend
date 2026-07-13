@@ -17,6 +17,7 @@ import java.net.URI;
 import java.nio.file.AccessDeniedException;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -118,7 +119,7 @@ public class VideoLectureController {
     }
 
     @GetMapping("/secure/stream/{lectureId}")
-    public ResponseEntity<Void> secureStreamLecture(
+    public ResponseEntity<Map<String, String>> secureStreamLecture(
             Principal principal,
             @PathVariable Long lectureId
     ) throws AccessDeniedException {
@@ -128,8 +129,6 @@ public class VideoLectureController {
                 lectureId
         );
 
-        return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(url))
-                .build();
+        return ResponseEntity.ok(Map.of("url", url));
     }
 }
