@@ -1,22 +1,25 @@
 package com.elearning.backend.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    @Value("${brevo.api.key}")
+    private String brevoApiKey;
 
-    @Async
+    private final RestTemplate restTemplate = new RestTemplate();
+
     public void sendWarningEmail(String to, String studentName,
                                  int percentage, int month, int year) {
-
-        String subject = "⚠️ Attendance Warning";
 
         String body = String.format(
                 "Dear %s,\n\n" +
@@ -27,14 +30,37 @@ public class EmailService {
                 studentName, month, year, percentage
         );
 
-        SimpleMailMessage message = new SimpleMailMessage();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("api-key", brevoApiKey);
 
-        message.setFrom("elearningplatformedu@gmail.com");
+        Map<String, Object> payload = Map.of(
+                "sender", Map.of(
+                        "name", "eLearning Education",
+                        "email", "elearningplatformedu@gmail.com"
+                ),
+                "to", List.of(
+                        Map.of("email", to)
+                ),
+                "subject", "⚠️ Attendance Warning",
+                "textContent", body
+        );
 
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
+        HttpEntity<Map<String, Object>> entity =
+                new HttpEntity<>(payload, headers);
 
-        mailSender.send(message);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    "https://api.brevo.com/v3/smtp/email",
+                    HttpMethod.POST,
+                    entity,
+                    String.class
+            );
+        }  catch (HttpStatusCodeException e) {
+            System.out.println("Brevo Error Status: " + e.getStatusCode());
+            System.out.println("Brevo Error Body: " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
